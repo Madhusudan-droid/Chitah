@@ -3,20 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Simple Texting App</title>
+  <title>Firebase Texting App</title>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    // 🔴 REPLACE THIS WITH YOUR OWN FIREBASE CONFIG
+    const firebaseConfig = {
+      apiKey: "AIzaSyDngexzzYE5-I2hOgynJKsAqXL2PbXS5m0",
+      authDomain: "chitah-52c38.firebaseapp.com",
+      projectId: "chitah-52c38",
+      storageBucket: "chitah-52c38.firebasestorage.app",
+      messagingSenderId: "861604372314",
+      appId: "1:861604372314:web:9b94665a65c1ba727e1d63"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const messagesEl = document.getElementById('messages');
+    const input = document.getElementById('input');
+
+    function addMessage(text, mine) {
+      const div = document.createElement('div');
+      div.className = `message ${mine ? 'me' : 'other'}`;
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    window.sendMessage = async () => {
+      const text = input.value.trim();
+      if (!text) return;
+
+      await addDoc(collection(db, 'messages'), {
+        text,
+        createdAt: serverTimestamp()
+      });
+
+      input.value = '';
+    };
+
+    const q = query(collection(db, 'messages'), orderBy('createdAt'));
+    onSnapshot(q, (snapshot) => {
+      messagesEl.innerHTML = '';
+      snapshot.forEach(doc => {
+        addMessage(doc.data().text, false);
+      });
+    });
+  </script>
+
   <style>
-    :root {
-      --app-width: 390px;
-      --app-height: 660px;
-      --primary: #2563eb;
-      --bg: #f8fafc;
-    }
-
-    * {
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    }
-
     body {
       margin: 0;
       background: #0f172a;
@@ -24,23 +63,23 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      font-family: system-ui;
     }
 
     .phone {
-      width: var(--app-width);
-      height: var(--app-height);
-      background: var(--bg);
+      width: 390px;
+      height: 670px;
+      background: #f8fafc;
       border-radius: 28px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.4);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
     header {
-      height: 56px;
-      background: var(--primary);
+      background: #2563eb;
       color: white;
+      height: 56px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -60,30 +99,15 @@
       max-width: 75%;
       padding: 10px 14px;
       border-radius: 16px;
-      font-size: 14px;
-    }
-
-    .me {
-      align-self: flex-end;
-      background: var(--primary);
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-
-    .other {
-      align-self: flex-start;
       background: #e5e7eb;
-      color: #111827;
-      border-bottom-left-radius: 4px;
     }
 
     footer {
       height: 64px;
       display: flex;
-      padding: 8px;
       gap: 8px;
+      padding: 8px;
       background: white;
-      border-top: 1px solid #e5e7eb;
     }
 
     input {
@@ -91,62 +115,25 @@
       border-radius: 999px;
       border: 1px solid #d1d5db;
       padding: 0 14px;
-      font-size: 14px;
     }
 
     button {
-      border: none;
       border-radius: 999px;
-      padding: 0 16px;
-      background: var(--primary);
+      border: none;
+      background: #2563eb;
       color: white;
-      font-size: 14px;
-      cursor: pointer;
+      padding: 0 16px;
     }
   </style>
 </head>
 <body>
   <div class="phone">
-    <header>Chat</header>
-
+    <header>Firebase Chat</header>
     <main id="messages"></main>
-
     <footer>
       <input id="input" placeholder="Type a message..." />
       <button onclick="sendMessage()">Send</button>
     </footer>
   </div>
-
-  <script>
-    // This lets multiple tabs/devices on the SAME site chat together
-    const channel = new BroadcastChannel('simple-chat');
-    const messagesEl = document.getElementById('messages');
-    const input = document.getElementById('input');
-
-    function addMessage(text, mine) {
-      const div = document.createElement('div');
-      div.className = `message ${mine ? 'me' : 'other'}`;
-      div.textContent = text;
-      messagesEl.appendChild(div);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-
-    function sendMessage() {
-      const text = input.value.trim();
-      if (!text) return;
-
-      addMessage(text, true);
-      channel.postMessage(text);
-      input.value = '';
-    }
-
-    channel.onmessage = (e) => {
-      addMessage(e.data, false);
-    };
-
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') sendMessage();
-    });
-  </script>
 </body>
 </html>
